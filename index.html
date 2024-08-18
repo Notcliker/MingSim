@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MingSim Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .computer-setup {
+            position: relative;
+            width: 80%;
+            max-width: 600px;
+        }
+        .computer-setup img {
+            width: 100%;
+        }
+        .screen-overlay {
+            position: absolute;
+            top: 23%;
+            left: 22.5%;
+            width: 36.2%;
+            height: 21%;
+            background-color: rgba(0, 0, 0, 0.85);
+            color: #0f0;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.6em;
+            padding: 10px;
+            box-sizing: border-box;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;  /* Центрирование по вертикали */
+            overflow: hidden;
+            white-space: pre-wrap;
+            transform: rotateX(7deg) rotateY(10deg) skewX(-5deg); /* Ваши настройки */
+        }
+        .screen-overlay div {
+            margin: 0 auto;  /* Центрирование строки внутри контейнера */
+            width: 100%;
+            text-align: left;
+        }
+        .hashrate-display {
+            position: absolute;
+            top: 30%; /* Положение на системном блоке */
+            left: 64%; /* Настройте по вашему изображению */
+            color: #0f0;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 0.7em;
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.75);
+            border-radius: 3px;
+            text-align: center;
+        }
+        .balance-display {
+            position: absolute;
+            top: 10%; /* Положение в верхней части */
+            left: 20%;
+            transform: translateX(-50%);
+            color: #0f0;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 1em;
+            padding: 5px;
+            background-color: rgba(0, 0, 0, 0.75);
+            border-radius: 3px;
+            text-align: center;
+        }
+        .cursor {
+            display: inline-block;
+            width: 5px;
+            height: 10px;
+            background-color: #0f0;
+            margin-left: 1px;
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                background-color: transparent;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="computer-setup">
+        <img src="computer.png" alt="Retro Computer Setup">
+        <div class="screen-overlay" id="screen">
+            <span class="cursor"></span>
+        </div>
+        <div class="hashrate-display" id="hashrate">500 MH/s</div> <!-- Хэшрейт -->
+        <div class="balance-display" id="balance">Balance: 0.000000 MNC</div> <!-- Баланс -->
+    </div>
+
+    <script>
+        let currentHashrate = 473;  // Переменная для хранения текущего хэшрейта
+        let balance = 0.000000; // Начальный баланс
+
+        function getRandomHash() {
+            const chars = 'abcdef0123456789';
+            let hash = '';
+            for (let i = 0; i < 16; i++) {  // Генерируем 16-символьный хэш
+                hash += chars[Math.floor(Math.random() * chars.length)];
+            }
+            return `Hash found: ${hash}`;  // Возвращаем хэш без точек
+        }
+
+        function addDotsToEnd(hashElement, callback) {
+            let dots = "";
+            const addDot = () => {
+                dots += ".";
+                hashElement.textContent += ".";
+                hashElement.scrollTop = hashElement.scrollHeight;  // Прокрутка вниз
+                if (dots.length < 3) {
+                    setTimeout(addDot, Math.random() * (5000 - 500) + 500);  // Рандомная задержка от 0,5 до 5 секунд
+                } else {
+                    callback();  // После трех точек вызываем следующий шаг
+                }
+            };
+            addDot();
+        }
+
+        function updateHashrate() {
+            const hashrateElement = document.getElementById("hashrate");
+            currentHashrate = Math.floor(Math.random() * (505 - 473 + 1)) + 473;  // Генерация случайного хэшрейта от 473 до 505
+            hashrateElement.textContent = `${currentHashrate} MH/s`;
+        }
+
+        function updateBalance(amount) {
+            balance += amount;
+            const balanceElement = document.getElementById("balance");
+            balanceElement.textContent = `Balance: ${balance.toFixed(6)} MNC`;
+        }
+
+        function calculateDelay(baseDelay) {
+            const acceleration = (currentHashrate - 473) * 0.005;  // Расчёт процента ускорения
+            return baseDelay * (1 - acceleration);  // Уменьшаем задержку в зависимости от хэшрейта
+        }
+
+        function startMiningCycle() {
+            const screen = document.getElementById("screen");
+            screen.textContent += "\nStarting new mining cycle...\nCalculating hash...\n";
+
+            const randomHashCount = Math.floor(Math.random() * (250 - 14 + 1)) + 14;  // Генерация случайного количества хэшей от 14 до 250
+            let step = 0;
+
+            const processNextHash = () => {
+                if (step < randomHashCount) {
+                    const hashElement = document.createElement("div");
+                    hashElement.textContent = getRandomHash();
+                    screen.appendChild(hashElement);
+
+                    // Удаление первой строки, если на экране более 4 строк
+                    if (screen.children.length > 4) {
+                        screen.removeChild(screen.firstChild);
+                    }
+
+                    screen.scrollTop = screen.scrollHeight;  // Прокрутка вниз
+                    addDotsToEnd(hashElement, () => {
+                        step++;
+                        const baseDelay = 800;  // Базовая задержка в миллисекундах
+                        setTimeout(processNextHash, calculateDelay(baseDelay));  // Задержка с учётом хэшрейта
+                    });
+                } else {
+                    const reward = 0.005678;
+                    updateBalance(reward);  // Обновляем баланс при нахождении блока
+                    screen.textContent += `Reward: ${reward.toFixed(6)} MNC\nBlock found!\n`;
+                    screen.scrollTop = screen.scrollHeight;  // Финальная прокрутка вниз
+                    setTimeout(startMiningCycle, 2000);  // Начало нового цикла через 2 секунды
+                }
+            };
+
+            processNextHash();  // Начинаем процесс
+        }
+
+        function startMiningAnimation() {
+            startMiningCycle();  // Запускаем первый цикл майнинга
+
+            // Запускаем обновление хэшрейта каждые 0.8 секунды
+            setInterval(updateHashrate, 800);
+        }
+
+        window.onload = startMiningAnimation;
+    </script>
+</body>
+</html>
